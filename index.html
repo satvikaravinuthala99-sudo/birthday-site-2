@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Birthday</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
+    color:white;
+    overflow:hidden;
+}
+
+/* Pages */
+.page{
+    position:fixed;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    opacity:1;
+    transition:opacity 1s ease;
+}
+
+.hidden{
+    opacity:0;
+    pointer-events:none;
+}
+
+/* Canvas for fireworks */
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:-1;
+}
+
+/* Glow Text */
+.glow{
+    text-shadow:0 0 10px #00eaff, 0 0 20px #00eaff, 0 0 40px #00eaff;
+}
+
+/* Buttons */
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    color:white;
+    cursor:pointer;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    box-shadow:0 0 10px #00eaff,0 0 20px rgba(0,234,255,0.5), inset 0 0 10px rgba(255,255,255,0.2);
+    transition:0.3s;
+    margin-top:15px;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+/* Page 1 extra spacing */
+#page1 button:nth-of-type(2){
+    margin-top:30px; /* space between Tap to Begin and Tap for Message */
+}
+
+/* Highlighted Sister-in-law Name */
+.sisNameHighlight{
+    color:#ff69b4;
+    padding:5px 15px;
+    border-radius:10px;
+    background: rgba(255,255,255,0.1);
+    box-shadow: 0 0 15px #ff69b4, 0 0 30px rgba(255,105,180,0.5);
+    font-size:2.2em;
+    margin-top:20px;
+    display:inline-block;
+    word-wrap: break-word;
+}
+
+/* Gallery Images */
+.gallery-img{
+    width:90%;
+    max-height:60%;
+    object-fit:contain;
+    margin-top:20px;
+    border-radius:15px;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
+    opacity:1;
+    transition:opacity 1s ease, transform 6.9s ease;
+    transform: scale(1);
+}
+
+/* Message */
+.message-box{
+    max-width:90%;
+    background:rgba(255,255,255,0.1);
+    padding:20px;
+    border-radius:15px;
+    line-height:1.6;
+    font-size:1em;
+    word-wrap: break-word;
+}
+
+/* 💖 Hearts */
+.heart{
+    position:fixed;
+    font-size:20px;
+    animation: floatUp 2s ease forwards;
+}
+
+@keyframes floatUp{
+    0%{transform:translateY(0) scale(1);opacity:1;}
+    100%{transform:translateY(-100px) scale(1.5);opacity:0;}
+}
+
+/* MOBILE OPTIMIZATION */
+@media (max-width:480px){
+    .sisNameHighlight{
+        font-size:1.6em;
+        padding:4px 10px;
+        margin-top:15px;
+    }
+    .message-box{
+        font-size:0.95em;
+        padding:15px;
+    }
+    button{
+        font-size:15px;
+        padding:10px 20px;
+    }
+    .gallery-img{
+        max-height:50%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fireworks"></canvas>
+
+<!-- AUDIO -->
+<audio id="birthdayAudio" src="your-song.mp3"></audio>
+
+<!-- PAGE 1 -->
+<div id="page1" class="page">
+    <h1 class="glow">Happy Birthday 💖</h1>
+    <h2 class="glow sisNameHighlight">VADINA</h2>
+
+    <button id="tapBegin">Tap to Begin</button>
+    <button onclick="showMessage()">Tap for Message</button>
+</div>
+
+<!-- GALLERY PAGE -->
+<div id="page2" class="page hidden">
+    <img id="galleryImg" class="gallery-img" src="photo1.jpg">
+    <button id="backBtn" class="hidden" onclick="stopGallery()">⬅ Back</button>
+</div>
+
+<!-- MESSAGE PAGE -->
+<div id="page3" class="page hidden">
+    <div class="message-box">
+        Dear Sister-in-Law,<br><br>
+
+        Happy Birthday to the most wonderful person who has just stepped into the most beautiful phase of life — motherhood 💕<br><br>
+
+        This year, your birthday is even more special because you are not just an amazing sister-in-law, but also a loving and caring mother. Watching you embrace this new journey fills our hearts with so much joy and pride. Your strength, patience, and endless love make you truly inspiring.<br><br>
+
+        May your days be filled with laughter, your nights with peaceful moments, and your life with countless memories with your little one. You deserve all the happiness in the world — today and always.<br><br>
+
+        Thank you for being such a kind-hearted, supportive, and beautiful soul in our family. We are so lucky to have you 💖<br><br>
+
+        Wishing you a birthday full of love, smiles, and magical moments ✨<br><br>
+
+        With lots of love,<br>
+        Satvika 🫶🥰
+    </div>
+    <button onclick="goHome()">⬅ Back</button>
+</div>
+
+<!-- ENDING PAGE -->
+<div id="ending" class="page hidden">
+    <h1 id="typingText" class="glow"></h1>
+    <button id="endBackBtn" class="hidden" onclick="stopEnding()">⬅ Back</button>
+</div>
+
+<script>
+/* NAVIGATION WITH FADE */
+const page1 = document.getElementById("page1");
+const page2 = document.getElementById("page2");
+const page3 = document.getElementById("page3");
+const ending = document.getElementById("ending");
+const galleryImg = document.getElementById("galleryImg");
+const backBtn = document.getElementById("backBtn");
+const endBackBtn = document.getElementById("endBackBtn");
+const audio = document.getElementById("birthdayAudio");
+
+let images=[
+"photo1.jpg","photo2.jpg","photo3.jpg","photo4.jpg","photo5.jpg",
+"photo6.jpg","photo7.jpg","photo8.jpg","photo9.jpg","photo10.jpg"
+];
+
+let i=0;
+let galleryInterval = 6900; // 6.9 seconds per photo → total 69s
+let galleryTimer;
+
+/* SHOW MESSAGE PAGE */
+function showMessage(){
+    page1.classList.add("hidden");
+    setTimeout(()=> page3.classList.remove("hidden"), 500);
+}
+
+/* GO HOME FROM ANY PAGE */
+function goHome(){
+    stopAudio();
+    stopGallery();
+    [page2, page3, ending].forEach(p=>{
+        p.classList.add("hidden");
+    });
+    setTimeout(()=> page1.classList.remove("hidden"), 500);
+}
+
+/* STOP GALLERY & MUSIC */
+function stopGallery(){
+    clearInterval(galleryTimer);
+    stopAudio();
+    page2.classList.add("hidden");
+    setTimeout(()=> page1.classList.remove("hidden"),500);
+}
+
+/* STOP AUDIO */
+function stopAudio(){
+    audio.pause();
+    audio.currentTime = 0;
+}
+
+/* GALLERY FUNCTIONS */
+function nextImage(){
+    galleryImg.style.opacity = 0;
+    galleryImg.style.transform = "scale(1)";
+    setTimeout(()=>{
+        i = (i+1) % images.length;
+        galleryImg.src = images[i];
+        galleryImg.style.opacity = 1;
+        galleryImg.style.transform = "scale(1.05)";
+        if(i===images.length-1){
+            setTimeout(()=>{
+                page2.classList.add("hidden");
+                setTimeout(()=> ending.classList.remove("hidden"),500);
+                typeText("With Love, Your Mardhal💕", "typingText", 70);
+            },1000);
+        }
+    },300);
+}
+
+function startGalleryAuto(){
+    galleryTimer = setInterval(()=>{
+        if(page2.classList.contains("hidden")) return;
+        nextImage();
+    }, galleryInterval);
+}
+
+/* START BUTTON FOR BOTH MUSIC + PHOTOS */
+document.getElementById("tapBegin").addEventListener("click", ()=>{
+    page1.classList.add("hidden");
+    setTimeout(()=> page2.classList.remove("hidden"),500);
+    audio.play().catch(()=>{}); // iOS requires user gesture
+    startGalleryAuto();
+});
+
+/* TAP TO NEXT IMAGE */
+page2.addEventListener("click", ()=>{
+    nextImage();
+});
+
+/* HEARTS ON CLICK */
+document.addEventListener("click", (e)=>{
+    for(let j=0;j<5;j++){
+        let heart=document.createElement("div");
+        heart.className="heart";
+        heart.innerHTML="💖";
+        heart.style.left=(e.clientX + Math.random()*40 - 20)+"px";
+        heart.style.top=(e.clientY + Math.random()*40 - 20)+"px";
+        document.body.appendChild(heart);
+        setTimeout(()=>heart.remove(),2000);
+    }
+});
+
+/* TYPING EFFECT */
+function typeText(text, elementId, speed=80){
+    let idx=0;
+    let el=document.getElementById(elementId);
+    el.innerHTML="";
+    function typing(){
+        if(idx<text.length){
+            el.innerHTML+=text.charAt(idx);
+            idx++;
+            setTimeout(typing, speed);
+        } else {
+            endBackBtn.classList.remove("hidden");
+        }
+    }
+    typing();
+}
+
+/* STOP ENDING AUDIO */
+function stopEnding(){
+    stopAudio();
+    ending.classList.add("hidden");
+    setTimeout(()=> page1.classList.remove("hidden"),500);
+}
+
+/* FIREWORKS */
+const canvas=document.getElementById("fireworks");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+let particles=[];
+let colors=["#ff4d6d","#ffd700","#00eaff","#aaff00","#ffffff"];
+
+function firework(){
+    let x=Math.random()*canvas.width;
+    let y=Math.random()*canvas.height/2;
+    for(let j=0;j<80;j++){
+        let angle=Math.random()*2*Math.PI;
+        let speed=Math.random()*5;
+        particles.push({x,y,dx:Math.cos(angle)*speed,dy:Math.sin(angle)*speed,life:100,color:colors[Math.floor(Math.random()*colors.length)]});
+    }
+}
+
+function animate(){
+    ctx.fillStyle="rgba(0,0,0,0.2)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    particles.forEach((p,index)=>{
+        p.x+=p.dx; p.y+=p.dy; p.life--;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,3,0,Math.PI*2);
+        ctx.fillStyle=p.color;
+        ctx.globalAlpha=p.life/100;
+        ctx.fill();
+        if(p.life<=0) particles.splice(index,1);
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(animate);
+}
+
+setInterval(firework,800);
+animate();
+</script>
+
+</body>
+</html>
